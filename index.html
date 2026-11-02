@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>NeonSky — Flying Car Prototype</title>
+<style>
+:root{--cyan:#6ff8ff;--panel:rgba(5,15,32,.78);--line:rgba(111,248,255,.55)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061020;color:#eafcff;font-family:Inter,system-ui,Arial,sans-serif}
+canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none}
+.panel{background:var(--panel);border:1px solid var(--line);box-shadow:0 0 24px #00d9ff20;backdrop-filter:blur(8px);border-radius:12px}
+#brand{position:absolute;top:14px;left:14px;padding:10px 14px;letter-spacing:.14em;font-weight:900;color:var(--cyan);font-size:14px}
+#stats{position:absolute;top:14px;right:14px;padding:10px 14px;min-width:145px;text-align:right;font-size:12px;line-height:1.7}
+#mission{position:absolute;top:105px;left:14px;padding:12px 14px;max-width:250px;font-size:12px;line-height:1.6}
+#mission strong{color:var(--cyan);letter-spacing:.08em}
+#help{position:absolute;bottom:14px;left:14px;padding:10px 12px;font-size:11px;line-height:1.6;max-width:300px}
+#message{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);padding:13px 20px;font-weight:800;color:var(--cyan);font-size:16px;text-align:center;opacity:0;transition:opacity .2s}
+#actions{position:absolute;top:100px;right:14px;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+button{color:#eafcff;background:rgba(5,24,43,.9);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-weight:700;font-size:11px;cursor:pointer;touch-action:manipulation}
+button:active{transform:scale(.97);background:#07364a}
+#mobile{position:absolute;bottom:15px;right:14px;display:none;gap:7px;align-items:flex-end;pointer-events:auto}
+.pad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,43px);gap:5px}
+.pad button,.flight button{width:46px;height:43px;padding:0;font-size:15px}
+.flight{display:grid;grid-template-columns:repeat(2,46px);gap:5px}
+#footer{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:10px;opacity:.65;white-space:nowrap}
+@media(max-width:760px){#mobile{display:flex}#help{bottom:145px;max-width:220px;font-size:10px}#mission{top:94px;max-width:205px}#stats{font-size:11px;min-width:115px}#actions{top:165px}#actions button{padding:8px;font-size:10px}#brand{font-size:12px}}
+</style>
+</head>
+<body>
+<div id="hud">
+ <div id="brand" class="panel">NEONSKY <span style="color:white">/ FLIGHT PROTOTYPE</span></div>
+ <div id="stats" class="panel">SPEED <b id="speed">0</b> km/h<br>MODE <b id="mode">DRIVE</b><br>BOOST <b id="boost">100</b>%<br>COINS <b id="coins">0</b></div>
+ <div id="mission" class="panel"><strong>MISSION 01 / SKYWAY</strong><br><span id="missionText">Fly through the glowing checkpoint ring.</span><br>CHECKPOINTS <b id="checks">0 / 5</b><br><small>Reach the ring to score rewards.</small></div>
+ <div id="actions"><button id="toggle">TAKE OFF / LAND · F</button><button id="camera">CAMERA · C</button><button id="boostBtn">TURBO · SHIFT</button><button id="upgrade">UPGRADE · 100 COINS</button><button id="nextMission">NEXT MISSION</button></div>
+ <div id="help" class="panel"><b style="color:var(--cyan)">CONTROLS</b><br>W/S: accelerate / brake · A/D: steer<br>Space: rise · Ctrl: descend · F: fly/land<br>C: chase/cockpit camera · Shift: turbo<br>Mobile: use on-screen controls.</div>
+ <div id="mobile">
+  <div class="pad">
+   <button data-key="w" style="grid-column:2">▲</button><button data-key="a" style="grid-column:1;grid-row:2">◀</button><button data-key="s" style="grid-column:2;grid-row:2">▼</button><button data-key="d" style="grid-column:3;grid-row:2">▶</button>
+  </div>
+  <div class="flight"><button data-key=" " >RISE</button><button data-key="control">DOWN</button><button id="mobileFly">FLY</button><button id="mobileBoost">BOOST</button></div>
+ </div>
+ <div id="message" class="panel"></div>
+ <div id="footer">A browser-based 3D prototype · Internet needed for Three.js CDN on first load</div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x07152d); scene.fog=new THREE.FogExp2(0x07152d,.0018);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,1800);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;document.body.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0x9edfff,0x172036,2.0));
+const sun=new THREE.DirectionalLight(0xc4eaff,2.5);sun.position.set(-120,180,80);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const cyan=new THREE.MeshStandardMaterial({color:0x7cf7ff,emissive:0x00a9d8,emissiveIntensity:1.3,metalness:.65,roughness:.22});
+const dark=new THREE.MeshStandardMaterial({color:0x182638,metalness:.85,roughness:.25});
+const glass=new THREE.MeshStandardMaterial({color:0x071a2e,metalness:.6,roughness:.12});
+const roadMat=new THREE.MeshStandardMaterial({color:0x182333,roughness:.8});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1600,1600),new THREE.MeshStandardMaterial({color:0x12263a,roughness:.9}));ground.rotation.x=-Math.PI/2;ground.position.y=-.8;ground.receiveShadow=true;scene.add(ground);
+// Ocean on one side, city and mountains around the map.
+const ocean=new THREE.Mesh(new THREE.PlaneGeometry(700,1000),new THREE.MeshStandardMaterial({color:0x063e68,metalness:.35,roughness:.24,emissive:0x001b33}));ocean.rotation.x=-Math.PI/2;ocean.position.set(470,-.65,0);scene.add(ocean);
+const grid=new THREE.GridHelper(1000,80,0x1c7898,0x14354f);grid.position.y=-.72;scene.add(grid);
+const road=new THREE.Mesh(new THREE.PlaneGeometry(34,800),roadMat);road.rotation.x=-Math.PI/2;road.position.set(0,-.35,0);scene.add(road);
+for(let z=-390;z<410;z+=16){let stripe=new THREE.Mesh(new THREE.BoxGeometry(.35,.035,7),new THREE.MeshBasicMaterial({color:0x8dfaff}));stripe.position.set(0,-.31,z);scene.add(stripe)}
+// Buildings with glowing edges.
+for(let x=-220;x<=220;x+=24) for(let z=-250;z<=260;z+=32){
+ if(Math.abs(x)<28)continue;
+ if(Math.random()<.12)continue;
+ const h=10+Math.random()*65,w=9+Math.random()*9,d=10+Math.random()*12;
+ const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(.56+Math.random()*.08,.35,.10+Math.random()*.08),metalness:.55,roughness:.4,emissive:0x041c31}));
+ b.position.set(x,h/2-.5,z);b.castShadow=true;b.receiveShadow=true;scene.add(b);
+ const edge=new THREE.LineSegments(new THREE.EdgesGeometry(b.geometry),new THREE.LineBasicMaterial({color:0x1a8ba5,transparent:true,opacity:.45}));edge.position.copy(b.position);scene.add(edge);
+ for(let yy=5;yy<h-3;yy+=6){const win=new THREE.Mesh(new THREE.BoxGeometry(w*.72,.22,.12),new THREE.MeshBasicMaterial({color:Math.random()>.35?0x2b92a8:0xf0b86b}));win.position.set(x,yy,z+d/2+.07);scene.add(win)}
+}
+// Mountains on far side.
+for(let i=0;i<18;i++){let r=35+Math.random()*55,h=50+Math.random()*95;let m=new THREE.Mesh(new THREE.ConeGeometry(r,h,6),new THREE.MeshStandardMaterial({color:0x263e57,roughness:1,flatShading:true}));m.position.set(-370+Math.random()*180,h/2-1,-420+Math.random()*850);m.rotation.y=Math.random()*2;scene.add(m)}
+// Clouds
+for(let i=0;i<30;i++){const g=new THREE.Group();for(let j=0;j<5;j++){let s=new THREE.Mesh(new THREE.SphereGeometry(5+Math.random()*7,8,6),new THREE.MeshStandardMaterial({color:0x9cb8ce,transparent:true,opacity:.16,roughness:1}));s.position.set(j*7,Math.random()*3,Math.random()*8);g.add(s)}g.position.set(-500+Math.random()*1000,70+Math.random()*70,-500+Math.random()*1000);scene.add(g)}
+// Car group: original angular concept vehicle.
+const car=new THREE.Group();scene.add(car);
+const body=new THREE.Mesh(new THREE.BoxGeometry(3.4,.72,5.8),dark);body.position.y=.9;body.castShadow=true;car.add(body);
+const nose=new THREE.Mesh(new THREE.CylinderGeometry(.2,1.55,2.2,4,1,false),dark);nose.rotation.x=Math.PI/2;nose.rotation.z=Math.PI/4;nose.scale.set(1,.8,1.25);nose.position.set(0,.82,-2.15);car.add(nose);
+const cabin=new THREE.Mesh(new THREE.BoxGeometry(2.45,.72,2.2),glass);cabin.position.set(0,1.52,.15);cabin.rotation.x=-.06;car.add(cabin);
+const roof=new THREE.Mesh(new THREE.BoxGeometry(2.5,.12,2.25),cyan);roof.position.set(0,1.91,.15);car.add(roof);
+for(const x of [-1.55,1.55]){let sill=new THREE.Mesh(new THREE.BoxGeometry(.18,.32,4.6),cyan);sill.position.set(x,.65,.1);car.add(sill);
+ for(const z of [-1.8,1.85]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.3,16),new THREE.MeshStandardMaterial({color:0x03070d,metalness:.4,roughness:.8}));wheel.rotation.z=Math.PI/2;wheel.position.set(x*1.04,.43,z);car.add(wheel)}
+ const lamp=new THREE.Mesh(new THREE.BoxGeometry(.65,.15,.1),new THREE.MeshBasicMaterial({color:0x8ffcff}));lamp.position.set(x*.65,.95,-3);car.add(lamp);
+ // fold-out flight pods
+ const pod=new THREE.Mesh(new THREE.BoxGeometry(.35,.22,2.0),dark);pod.position.set(x*1.5,.75,.3);car.add(pod);
+ const glow=new THREE.Mesh(new THREE.BoxGeometry(.42,.09,1.8),cyan);glow.position.set(x*1.5,.58,.3);car.add(glow);
+}
+const rearLight=new THREE.Mesh(new THREE.BoxGeometry(2.4,.13,.1),new THREE.MeshBasicMaterial({color:0xff315b}));rearLight.position.set(0,.92,2.95);car.add(rearLight);
+car.position.set(0,0,20);
+// Checkpoint rings
+let checkpoints=[],cpIndex=0,coins=0,upgradeLevel=0,mission=0;
+function makeRing(pos){const ring=new THREE.Mesh(new THREE.TorusGeometry(5,.22,8,36),new THREE.MeshStandardMaterial({color:0x5ff8ff,emissive:0x00c9ff,emissiveIntensity:2,metalness:.4,roughness:.2}));ring.position.copy(pos);ring.rotation.y=Math.PI/2;scene.add(ring);const light=new THREE.PointLight(0x00cfff,15,45);light.position.copy(pos);scene.add(light);return {ring,light,pos}}
+function resetCheckpoints(){checkpoints.forEach(c=>{scene.remove(c.ring);scene.remove(c.light)});checkpoints=[];for(let i=0;i<5;i++){let pos;if(mission%3===0)pos=new THREE.Vector3((i%2?18:-18),18+i*8,-55-i*58);else if(mission%3===1)pos=new THREE.Vector3(80+i*38,25+i*7,-100-i*45);else pos=new THREE.Vector3(-80-i*25,35+i*4,100-i*65);checkpoints.push(makeRing(pos))}cpIndex=0;document.querySelector('#checks').textContent='0 / 5'}
+resetCheckpoints();
+const keys={};let flying=false,cockpit=false,speed=0,boost=100;const clock=new THREE.Clock();
+function msg(t){const el=document.querySelector('#message');el.textContent=t;el.style.opacity=1;clearTimeout(msg.timer);msg.timer=setTimeout(()=>el.style.opacity=0,1800)}
+function toggleFlight(){flying=!flying;msg(flying?'FLIGHT MODE ENGAGED':'LANDING MODE');}
+document.querySelector('#toggle').onclick=toggleFlight;document.querySelector('#camera').onclick=()=>{cockpit=!cockpit;msg(cockpit?'COCKPIT CAMERA':'CHASE CAMERA')};document.querySelector('#boostBtn').onclick=()=>{keys.shift=true;setTimeout(()=>keys.shift=false,1400)};
+document.querySelector('#upgrade').onclick=()=>{if(coins>=100){coins-=100;upgradeLevel++;document.querySelector('#coins').textContent=coins;msg('UPGRADE INSTALLED · POWER '+(upgradeLevel+1));}else msg('NEED 100 COINS FOR UPGRADE')};
+document.querySelector('#nextMission').onclick=()=>{mission++;resetCheckpoints();document.querySelector('#missionText').textContent=['Fly through the glowing checkpoint ring.','Air-race route: sweep across the ocean.','Mountain run: thread the high passes.'][mission%3];msg('MISSION '+String(mission+1).padStart(2,'0')+' STARTED')};
+document.querySelector('#mobileFly').onclick=toggleFlight;document.querySelector('#mobileBoost').onclick=()=>{keys.shift=true;setTimeout(()=>keys.shift=false,1200)};
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='f')toggleFlight();if(e.key.toLowerCase()==='c'){cockpit=!cockpit;msg(cockpit?'COCKPIT CAMERA':'CHASE CAMERA')}});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+document.querySelectorAll('[data-key]').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();keys[k]=true};const up=e=>{e.preventDefault();keys[k]=false};b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointerleave',up);b.addEventListener('pointercancel',up)});
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.035);
+ const accel=keys.w?26:keys.s?-30:0;speed+=accel*dt;speed*=Math.pow(.982,dt*60);speed=Math.max(0,Math.min(160+upgradeLevel*20,speed));
+ const turbo=keys.shift&&boost>0;if(turbo){speed=Math.min(240+upgradeLevel*20,speed+55*dt);boost=Math.max(0,boost-22*dt)}else boost=Math.min(100,boost+7*dt);
+ const turn=(keys.a?1:0)-(keys.d?1:0);car.rotation.y+=turn*dt*(.8+speed*.006);
+ const forward=new THREE.Vector3(Math.sin(car.rotation.y),0,-Math.cos(car.rotation.y));
+ car.position.addScaledVector(forward,speed*dt*.22);
+ if(flying){if(keys[' '])car.position.y+=22*dt;if(keys.control||keys.control==='true')car.position.y-=22*dt;car.position.y=Math.max(3,Math.min(125,car.position.y));car.rotation.z=THREE.MathUtils.lerp(car.rotation.z,-turn*.15,.08);car.position.y+=Math.sin(performance.now()*.0015)*.012}
+ else {car.position.y=THREE.MathUtils.lerp(car.position.y,0,.12);car.rotation.z=THREE.MathUtils.lerp(car.rotation.z,0,.08)}
+ car.position.x=THREE.MathUtils.clamp(car.position.x,-620,620);car.position.z=THREE.MathUtils.clamp(car.position.z,-620,620);
+ checkpoints.forEach((c,i)=>{c.ring.rotation.z+=dt*.45;c.ring.material.emissiveIntensity=1.5+Math.sin(performance.now()*.004)*.5});
+ const cp=checkpoints[cpIndex];if(cp&&car.position.distanceTo(cp.pos)<7){scene.remove(cp.ring);scene.remove(cp.light);cpIndex++;coins+=25;document.querySelector('#coins').textContent=coins;document.querySelector('#checks').textContent=Math.min(cpIndex,5)+' / 5';msg('+25 COINS · CHECKPOINT');if(cpIndex>=5){coins+=100;document.querySelector('#coins').textContent=coins;msg('MISSION COMPLETE · +100 COINS');resetCheckpoints()}}
+ document.querySelector('#speed').textContent=Math.round(speed*(flying?1.7:1));document.querySelector('#mode').textContent=flying?'FLIGHT':'DRIVE';document.querySelector('#boost').textContent=Math.round(boost);
+ const target=new THREE.Vector3();if(cockpit){target.copy(car.position).add(new THREE.Vector3(0,1.7,0));camera.position.lerp(target,.22);const look=car.position.clone().add(forward.clone().multiplyScalar(20)).add(new THREE.Vector3(0,1,0));camera.lookAt(look)}else{const offset=new THREE.Vector3(0,5.8,12).applyAxisAngle(new THREE.Vector3(0,1,0),car.rotation.y);target.copy(car.position).add(offset);camera.position.lerp(target,.09);camera.lookAt(car.position.clone().add(new THREE.Vector3(0,1,0)))}
+ renderer.render(scene,camera)
+}
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))});
+msg('WELCOME TO NEONSKY · PRESS F TO FLY');animate();
+</script>
+</body>
+</html>
