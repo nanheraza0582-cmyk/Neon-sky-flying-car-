@@ -1,127 +1,244 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>NeonSky — Flying Car Prototype</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#06101f">
+<title>NeonSky — Flying Car Game</title>
 <style>
-:root{--cyan:#6ff8ff;--panel:rgba(5,15,32,.78);--line:rgba(111,248,255,.55)}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061020;color:#eafcff;font-family:Inter,system-ui,Arial,sans-serif}
-canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none}
-.panel{background:var(--panel);border:1px solid var(--line);box-shadow:0 0 24px #00d9ff20;backdrop-filter:blur(8px);border-radius:12px}
-#brand{position:absolute;top:14px;left:14px;padding:10px 14px;letter-spacing:.14em;font-weight:900;color:var(--cyan);font-size:14px}
-#stats{position:absolute;top:14px;right:14px;padding:10px 14px;min-width:145px;text-align:right;font-size:12px;line-height:1.7}
-#mission{position:absolute;top:105px;left:14px;padding:12px 14px;max-width:250px;font-size:12px;line-height:1.6}
-#mission strong{color:var(--cyan);letter-spacing:.08em}
-#help{position:absolute;bottom:14px;left:14px;padding:10px 12px;font-size:11px;line-height:1.6;max-width:300px}
-#message{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);padding:13px 20px;font-weight:800;color:var(--cyan);font-size:16px;text-align:center;opacity:0;transition:opacity .2s}
-#actions{position:absolute;top:100px;right:14px;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
-button{color:#eafcff;background:rgba(5,24,43,.9);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-weight:700;font-size:11px;cursor:pointer;touch-action:manipulation}
-button:active{transform:scale(.97);background:#07364a}
-#mobile{position:absolute;bottom:15px;right:14px;display:none;gap:7px;align-items:flex-end;pointer-events:auto}
-.pad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,43px);gap:5px}
-.pad button,.flight button{width:46px;height:43px;padding:0;font-size:15px}
-.flight{display:grid;grid-template-columns:repeat(2,46px);gap:5px}
-#footer{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:10px;opacity:.65;white-space:nowrap}
-@media(max-width:760px){#mobile{display:flex}#help{bottom:145px;max-width:220px;font-size:10px}#mission{top:94px;max-width:205px}#stats{font-size:11px;min-width:115px}#actions{top:165px}#actions button{padding:8px;font-size:10px}#brand{font-size:12px}}
+:root{--cyan:#73f7ff;--panel:rgba(4,14,30,.86);--line:rgba(115,247,255,.52)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06101f;color:#effcff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;touch-action:none}
+canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 0 20px #00dfff18;backdrop-filter:blur(7px)}
+#brand{position:absolute;top:max(8px,env(safe-area-inset-top));left:9px;padding:8px 10px;font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--cyan)}
+#stats{position:absolute;top:max(8px,env(safe-area-inset-top));right:9px;padding:8px 10px;min-width:112px;font-size:11px;line-height:1.65;text-align:right}
+#mission{position:absolute;top:62px;left:9px;padding:9px 11px;width:min(225px,56vw);font-size:11px;line-height:1.5}
+#mission strong{color:var(--cyan);letter-spacing:.06em}
+#missionText{display:block;margin:3px 0}
+#actions{position:absolute;top:62px;right:9px;display:flex;flex-direction:column;gap:5px;align-items:stretch;pointer-events:auto;max-width:135px}
+button{color:#effcff;background:rgba(5,24,43,.94);border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:11px;font-weight:800;cursor:pointer;touch-action:none;user-select:none}
+button:active,button.active{background:#07516a;transform:scale(.98)}
+button:disabled{opacity:.42;filter:grayscale(.7)}
+#mobile{position:absolute;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;align-items:end;pointer-events:auto}
+.controlGroup{display:grid;gap:5px}
+#steer{grid-template-columns:repeat(3,minmax(35px,1fr))}
+#flight{grid-template-columns:repeat(2,minmax(42px,1fr))}
+#pedals{grid-template-columns:repeat(2,minmax(42px,1fr))}
+#mobile button{min-height:43px;padding:7px 4px;font-size:11px}
+#mobile .wide{grid-column:span 2}
+#message{position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);padding:12px 16px;max-width:85vw;text-align:center;font-weight:900;color:var(--cyan);opacity:0;transition:opacity .2s;font-size:14px}
+#start{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,rgba(2,8,22,.92),rgba(3,30,52,.88));}
+#startCard{max-width:420px;padding:22px;text-align:center;pointer-events:auto}
+#startCard h1{margin:0 0 7px;color:var(--cyan);letter-spacing:.12em}
+#startCard p{font-size:13px;line-height:1.55;color:#d4eaf5}
+#startBtn{font-size:14px;padding:12px 22px;margin-top:7px;background:#063b50}
+#footer{position:absolute;left:50%;bottom:166px;transform:translateX(-50%);font-size:9px;opacity:.55;white-space:nowrap}
+@media(min-width:800px){
+ #brand{font-size:14px;padding:10px 14px}#stats{font-size:12px;min-width:145px;padding:10px 14px}
+ #mission{top:76px;left:14px;width:250px;font-size:12px;padding:12px 14px}
+ #actions{top:76px;right:14px;max-width:165px;gap:7px}
+ #actions button{font-size:12px;padding:10px 12px}
+ #mobile{left:14px;right:14px;bottom:14px;grid-template-columns:repeat(3,auto);justify-content:space-between;max-width:620px}
+ #mobile button{min-width:54px;min-height:46px;font-size:12px}
+ #footer{bottom:8px}
+}
 </style>
 </head>
 <body>
 <div id="hud">
- <div id="brand" class="panel">NEONSKY <span style="color:white">/ FLIGHT PROTOTYPE</span></div>
+ <div id="brand" class="panel">NEONSKY <span style="color:white">/ SKY RUNNER</span></div>
  <div id="stats" class="panel">SPEED <b id="speed">0</b> km/h<br>MODE <b id="mode">DRIVE</b><br>BOOST <b id="boost">100</b>%<br>COINS <b id="coins">0</b></div>
- <div id="mission" class="panel"><strong>MISSION 01 / SKYWAY</strong><br><span id="missionText">Fly through the glowing checkpoint ring.</span><br>CHECKPOINTS <b id="checks">0 / 5</b><br><small>Reach the ring to score rewards.</small></div>
- <div id="actions"><button id="toggle">TAKE OFF / LAND · F</button><button id="camera">CAMERA · C</button><button id="boostBtn">TURBO · SHIFT</button><button id="upgrade">UPGRADE · 100 COINS</button><button id="nextMission">NEXT MISSION</button></div>
- <div id="help" class="panel"><b style="color:var(--cyan)">CONTROLS</b><br>W/S: accelerate / brake · A/D: steer<br>Space: rise · Ctrl: descend · F: fly/land<br>C: chase/cockpit camera · Shift: turbo<br>Mobile: use on-screen controls.</div>
+ <div id="mission" class="panel"><strong id="missionTitle">MISSION 01 / SKYWAY</strong><span id="missionText">Reach all 5 glowing checkpoints to complete this mission.</span>CHECKPOINTS <b id="checks">0 / 5</b><br><small id="missionStatus">Mission in progress</small></div>
+ <div id="actions">
+  <button id="toggle">TAKE OFF / LAND</button>
+  <button id="camera">CHASE / COCKPIT</button>
+  <button id="boostBtn">TURBO BOOST</button>
+  <button id="upgrade">UPGRADE · 100 COINS</button>
+  <button id="nextMission" disabled>NEXT MISSION 🔒</button>
+ </div>
  <div id="mobile">
-  <div class="pad">
-   <button data-key="w" style="grid-column:2">▲</button><button data-key="a" style="grid-column:1;grid-row:2">◀</button><button data-key="s" style="grid-column:2;grid-row:2">▼</button><button data-key="d" style="grid-column:3;grid-row:2">▶</button>
+  <div id="steer" class="controlGroup">
+   <button style="visibility:hidden">•</button><button data-key="w">▲ ACCEL</button><button style="visibility:hidden">•</button>
+   <button data-key="a">◀ LEFT</button><button data-key="s">▼ BRAKE</button><button data-key="d">RIGHT ▶</button>
   </div>
-  <div class="flight"><button data-key=" " >RISE</button><button data-key="control">DOWN</button><button id="mobileFly">FLY</button><button id="mobileBoost">BOOST</button></div>
+  <div id="flight" class="controlGroup">
+   <button data-key="space">▲ RISE</button><button data-key="down">▼ DESCEND</button>
+   <button id="mobileFly">FLY / LAND</button><button id="mobileBoost">BOOST</button>
+   <button id="mobileCamera" class="wide">CHANGE CAMERA</button>
+  </div>
+  <div id="pedals" class="controlGroup">
+   <button data-key="w">ACCELERATE</button><button data-key="s">BRAKE</button>
+   <button data-key="a">LEFT</button><button data-key="d">RIGHT</button>
+   <button id="mobileUpgrade" class="wide">UPGRADE</button>
+  </div>
  </div>
  <div id="message" class="panel"></div>
- <div id="footer">A browser-based 3D prototype · Internet needed for Three.js CDN on first load</div>
+ <div id="footer">Mobile: hold buttons · PC: WASD / Space / Ctrl · Internet required for 3D engine</div>
+</div>
+<div id="start">
+ <div id="startCard" class="panel">
+  <h1>NEONSKY</h1>
+  <p>Explore the futuristic city, ocean road and mountain skyline. Drive, take off, collect checkpoints, earn coins and upgrade your car.</p>
+  <p><b>Mobile:</b> hold the on-screen buttons.<br><b>PC:</b> W/S accelerate/brake, A/D steer, Space/Ctrl rise/descend, F fly/land, C camera, Shift boost.</p>
+  <button id="startBtn">START GAME</button>
+ </div>
 </div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-const scene=new THREE.Scene(); scene.background=new THREE.Color(0x07152d); scene.fog=new THREE.FogExp2(0x07152d,.0018);
-const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,1800);
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;document.body.prepend(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0x9edfff,0x172036,2.0));
-const sun=new THREE.DirectionalLight(0xc4eaff,2.5);sun.position.set(-120,180,80);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
-const cyan=new THREE.MeshStandardMaterial({color:0x7cf7ff,emissive:0x00a9d8,emissiveIntensity:1.3,metalness:.65,roughness:.22});
-const dark=new THREE.MeshStandardMaterial({color:0x182638,metalness:.85,roughness:.25});
-const glass=new THREE.MeshStandardMaterial({color:0x071a2e,metalness:.6,roughness:.12});
-const roadMat=new THREE.MeshStandardMaterial({color:0x182333,roughness:.8});
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(1600,1600),new THREE.MeshStandardMaterial({color:0x12263a,roughness:.9}));ground.rotation.x=-Math.PI/2;ground.position.y=-.8;ground.receiveShadow=true;scene.add(ground);
-// Ocean on one side, city and mountains around the map.
-const ocean=new THREE.Mesh(new THREE.PlaneGeometry(700,1000),new THREE.MeshStandardMaterial({color:0x063e68,metalness:.35,roughness:.24,emissive:0x001b33}));ocean.rotation.x=-Math.PI/2;ocean.position.set(470,-.65,0);scene.add(ocean);
-const grid=new THREE.GridHelper(1000,80,0x1c7898,0x14354f);grid.position.y=-.72;scene.add(grid);
-const road=new THREE.Mesh(new THREE.PlaneGeometry(34,800),roadMat);road.rotation.x=-Math.PI/2;road.position.set(0,-.35,0);scene.add(road);
-for(let z=-390;z<410;z+=16){let stripe=new THREE.Mesh(new THREE.BoxGeometry(.35,.035,7),new THREE.MeshBasicMaterial({color:0x8dfaff}));stripe.position.set(0,-.31,z);scene.add(stripe)}
-// Buildings with glowing edges.
-for(let x=-220;x<=220;x+=24) for(let z=-250;z<=260;z+=32){
- if(Math.abs(x)<28)continue;
- if(Math.random()<.12)continue;
- const h=10+Math.random()*65,w=9+Math.random()*9,d=10+Math.random()*12;
- const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(.56+Math.random()*.08,.35,.10+Math.random()*.08),metalness:.55,roughness:.4,emissive:0x041c31}));
- b.position.set(x,h/2-.5,z);b.castShadow=true;b.receiveShadow=true;scene.add(b);
- const edge=new THREE.LineSegments(new THREE.EdgesGeometry(b.geometry),new THREE.LineBasicMaterial({color:0x1a8ba5,transparent:true,opacity:.45}));edge.position.copy(b.position);scene.add(edge);
- for(let yy=5;yy<h-3;yy+=6){const win=new THREE.Mesh(new THREE.BoxGeometry(w*.72,.22,.12),new THREE.MeshBasicMaterial({color:Math.random()>.35?0x2b92a8:0xf0b86b}));win.position.set(x,yy,z+d/2+.07);scene.add(win)}
+const $=id=>document.getElementById(id);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x07152b);
+scene.fog=new THREE.FogExp2(0x07152b,.00125);
+const camera=new THREE.PerspectiveCamera(66,innerWidth/innerHeight,.1,1500);
+const renderer=new THREE.WebGLRenderer({antialias:innerWidth>700,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.08;
+document.body.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0x9edfff,0x182236,2.1));
+const sun=new THREE.DirectionalLight(0xc5eaff,2.1);sun.position.set(-100,150,50);scene.add(sun);
+const mat=(color,metalness=.2,roughness=.55,emissive=0)=>new THREE.MeshStandardMaterial({color,metalness,roughness,emissive,emissiveIntensity:emissive?1.3:1});
+const cyan=mat(0x70f8ff,.55,.25,0x0088aa),dark=mat(0x182638,.8,.3),glass=mat(0x061a2c,.5,.12),tire=mat(0x03060b,.15,.8);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),mat(0x14273b));ground.rotation.x=-Math.PI/2;ground.position.y=-1;scene.add(ground);
+const ocean=new THREE.Mesh(new THREE.PlaneGeometry(680,1050),new THREE.MeshStandardMaterial({color:0x06456a,metalness:.35,roughness:.3,emissive:0x00182b}));ocean.rotation.x=-Math.PI/2;ocean.position.set(460,-.8,0);scene.add(ocean);
+const road=new THREE.Mesh(new THREE.PlaneGeometry(32,1000),mat(0x1a2737));road.rotation.x=-Math.PI/2;road.position.set(0,-.5,0);scene.add(road);
+for(let z=-490;z<500;z+=17){let stripe=new THREE.Mesh(new THREE.BoxGeometry(.3,.035,7),new THREE.MeshBasicMaterial({color:0x7df7ff}));stripe.position.set(0,-.46,z);scene.add(stripe)}
+const grid=new THREE.GridHelper(1000,80,0x1b7898,0x12384e);grid.position.y=-.94;scene.add(grid);
+// Stylized city blocks; deliberately moderate geometry count for phones.
+for(let x=-210;x<=210;x+=28)for(let z=-280;z<=280;z+=38){
+ if(Math.abs(x)<27||Math.random()<.17)continue;
+ const w=9+Math.random()*8,d=10+Math.random()*10,h=12+Math.random()*48;
+ const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(new THREE.Color().setHSL(.56+Math.random()*.07,.34,.12+Math.random()*.07),.45,.48,0x03101d));
+ b.position.set(x,h/2-1,z);scene.add(b);
+ for(let y=5;y<h-3;y+=7){const win=new THREE.Mesh(new THREE.BoxGeometry(w*.65,.2,.08),new THREE.MeshBasicMaterial({color:Math.random()>.3?0x278ca4:0xffc16d}));win.position.set(x,y,z+d/2+.06);scene.add(win)}
 }
-// Mountains on far side.
-for(let i=0;i<18;i++){let r=35+Math.random()*55,h=50+Math.random()*95;let m=new THREE.Mesh(new THREE.ConeGeometry(r,h,6),new THREE.MeshStandardMaterial({color:0x263e57,roughness:1,flatShading:true}));m.position.set(-370+Math.random()*180,h/2-1,-420+Math.random()*850);m.rotation.y=Math.random()*2;scene.add(m)}
-// Clouds
-for(let i=0;i<30;i++){const g=new THREE.Group();for(let j=0;j<5;j++){let s=new THREE.Mesh(new THREE.SphereGeometry(5+Math.random()*7,8,6),new THREE.MeshStandardMaterial({color:0x9cb8ce,transparent:true,opacity:.16,roughness:1}));s.position.set(j*7,Math.random()*3,Math.random()*8);g.add(s)}g.position.set(-500+Math.random()*1000,70+Math.random()*70,-500+Math.random()*1000);scene.add(g)}
-// Car group: original angular concept vehicle.
+for(let i=0;i<22;i++){const h=45+Math.random()*90,r=30+Math.random()*45;const m=new THREE.Mesh(new THREE.ConeGeometry(r,h,6),mat(0x263e57,0,.95));m.position.set(-340+Math.random()*150,h/2-1,-470+Math.random()*950);m.rotation.y=Math.random()*2;scene.add(m)}
+// Original angular futuristic car, forward direction is local -Z.
 const car=new THREE.Group();scene.add(car);
-const body=new THREE.Mesh(new THREE.BoxGeometry(3.4,.72,5.8),dark);body.position.y=.9;body.castShadow=true;car.add(body);
-const nose=new THREE.Mesh(new THREE.CylinderGeometry(.2,1.55,2.2,4,1,false),dark);nose.rotation.x=Math.PI/2;nose.rotation.z=Math.PI/4;nose.scale.set(1,.8,1.25);nose.position.set(0,.82,-2.15);car.add(nose);
-const cabin=new THREE.Mesh(new THREE.BoxGeometry(2.45,.72,2.2),glass);cabin.position.set(0,1.52,.15);cabin.rotation.x=-.06;car.add(cabin);
-const roof=new THREE.Mesh(new THREE.BoxGeometry(2.5,.12,2.25),cyan);roof.position.set(0,1.91,.15);car.add(roof);
-for(const x of [-1.55,1.55]){let sill=new THREE.Mesh(new THREE.BoxGeometry(.18,.32,4.6),cyan);sill.position.set(x,.65,.1);car.add(sill);
- for(const z of [-1.8,1.85]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.3,16),new THREE.MeshStandardMaterial({color:0x03070d,metalness:.4,roughness:.8}));wheel.rotation.z=Math.PI/2;wheel.position.set(x*1.04,.43,z);car.add(wheel)}
- const lamp=new THREE.Mesh(new THREE.BoxGeometry(.65,.15,.1),new THREE.MeshBasicMaterial({color:0x8ffcff}));lamp.position.set(x*.65,.95,-3);car.add(lamp);
- // fold-out flight pods
- const pod=new THREE.Mesh(new THREE.BoxGeometry(.35,.22,2.0),dark);pod.position.set(x*1.5,.75,.3);car.add(pod);
- const glow=new THREE.Mesh(new THREE.BoxGeometry(.42,.09,1.8),cyan);glow.position.set(x*1.5,.58,.3);car.add(glow);
+const addBox=(parent,size,position,material)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(...size),material);m.position.set(...position);parent.add(m);return m};
+addBox(car,[3.25,.65,5.5],[0,.86,0],dark);
+const hood=new THREE.Mesh(new THREE.CylinderGeometry(.15,1.45,2.2,4),dark);hood.rotation.x=Math.PI/2;hood.rotation.z=Math.PI/4;hood.scale.set(1,.8,1.2);hood.position.set(0,.8,-2.05);car.add(hood);
+addBox(car,[2.35,.72,2.2],[0,1.43,.15],glass);
+addBox(car,[2.45,.12,2.25],[0,1.83,.15],cyan);
+for(const x of [-1.52,1.52]){
+ addBox(car,[.17,.3,4.5],[x,.58,0],cyan);
+ for(const z of [-1.78,1.8]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.43,.43,.28,12),tire);wheel.rotation.z=Math.PI/2;wheel.position.set(x*1.04,.38,z);car.add(wheel)}
+ addBox(car,[.65,.13,.09],[x*.65,.9,-2.83],new THREE.MeshBasicMaterial({color:0x91ffff}));
+ addBox(car,[.38,.18,1.8],[x*1.5,.65,.25],dark);
+ addBox(car,[.4,.07,1.6],[x*1.5,.51,.25],cyan);
 }
-const rearLight=new THREE.Mesh(new THREE.BoxGeometry(2.4,.13,.1),new THREE.MeshBasicMaterial({color:0xff315b}));rearLight.position.set(0,.92,2.95);car.add(rearLight);
+addBox(car,[2.3,.13,.1],[0,.88,2.8],new THREE.MeshBasicMaterial({color:0xff315b}));
 car.position.set(0,0,20);
-// Checkpoint rings
-let checkpoints=[],cpIndex=0,coins=0,upgradeLevel=0,mission=0;
-function makeRing(pos){const ring=new THREE.Mesh(new THREE.TorusGeometry(5,.22,8,36),new THREE.MeshStandardMaterial({color:0x5ff8ff,emissive:0x00c9ff,emissiveIntensity:2,metalness:.4,roughness:.2}));ring.position.copy(pos);ring.rotation.y=Math.PI/2;scene.add(ring);const light=new THREE.PointLight(0x00cfff,15,45);light.position.copy(pos);scene.add(light);return {ring,light,pos}}
-function resetCheckpoints(){checkpoints.forEach(c=>{scene.remove(c.ring);scene.remove(c.light)});checkpoints=[];for(let i=0;i<5;i++){let pos;if(mission%3===0)pos=new THREE.Vector3((i%2?18:-18),18+i*8,-55-i*58);else if(mission%3===1)pos=new THREE.Vector3(80+i*38,25+i*7,-100-i*45);else pos=new THREE.Vector3(-80-i*25,35+i*4,100-i*65);checkpoints.push(makeRing(pos))}cpIndex=0;document.querySelector('#checks').textContent='0 / 5'}
-resetCheckpoints();
-const keys={};let flying=false,cockpit=false,speed=0,boost=100;const clock=new THREE.Clock();
-function msg(t){const el=document.querySelector('#message');el.textContent=t;el.style.opacity=1;clearTimeout(msg.timer);msg.timer=setTimeout(()=>el.style.opacity=0,1800)}
-function toggleFlight(){flying=!flying;msg(flying?'FLIGHT MODE ENGAGED':'LANDING MODE');}
-document.querySelector('#toggle').onclick=toggleFlight;document.querySelector('#camera').onclick=()=>{cockpit=!cockpit;msg(cockpit?'COCKPIT CAMERA':'CHASE CAMERA')};document.querySelector('#boostBtn').onclick=()=>{keys.shift=true;setTimeout(()=>keys.shift=false,1400)};
-document.querySelector('#upgrade').onclick=()=>{if(coins>=100){coins-=100;upgradeLevel++;document.querySelector('#coins').textContent=coins;msg('UPGRADE INSTALLED · POWER '+(upgradeLevel+1));}else msg('NEED 100 COINS FOR UPGRADE')};
-document.querySelector('#nextMission').onclick=()=>{mission++;resetCheckpoints();document.querySelector('#missionText').textContent=['Fly through the glowing checkpoint ring.','Air-race route: sweep across the ocean.','Mountain run: thread the high passes.'][mission%3];msg('MISSION '+String(mission+1).padStart(2,'0')+' STARTED')};
-document.querySelector('#mobileFly').onclick=toggleFlight;document.querySelector('#mobileBoost').onclick=()=>{keys.shift=true;setTimeout(()=>keys.shift=false,1200)};
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='f')toggleFlight();if(e.key.toLowerCase()==='c'){cockpit=!cockpit;msg(cockpit?'COCKPIT CAMERA':'CHASE CAMERA')}});
-addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-document.querySelectorAll('[data-key]').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();keys[k]=true};const up=e=>{e.preventDefault();keys[k]=false};b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointerleave',up);b.addEventListener('pointercancel',up)});
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.035);
- const accel=keys.w?26:keys.s?-30:0;speed+=accel*dt;speed*=Math.pow(.982,dt*60);speed=Math.max(0,Math.min(160+upgradeLevel*20,speed));
- const turbo=keys.shift&&boost>0;if(turbo){speed=Math.min(240+upgradeLevel*20,speed+55*dt);boost=Math.max(0,boost-22*dt)}else boost=Math.min(100,boost+7*dt);
- const turn=(keys.a?1:0)-(keys.d?1:0);car.rotation.y+=turn*dt*(.8+speed*.006);
- const forward=new THREE.Vector3(Math.sin(car.rotation.y),0,-Math.cos(car.rotation.y));
- car.position.addScaledVector(forward,speed*dt*.22);
- if(flying){if(keys[' '])car.position.y+=22*dt;if(keys.control||keys.control==='true')car.position.y-=22*dt;car.position.y=Math.max(3,Math.min(125,car.position.y));car.rotation.z=THREE.MathUtils.lerp(car.rotation.z,-turn*.15,.08);car.position.y+=Math.sin(performance.now()*.0015)*.012}
- else {car.position.y=THREE.MathUtils.lerp(car.position.y,0,.12);car.rotation.z=THREE.MathUtils.lerp(car.rotation.z,0,.08)}
- car.position.x=THREE.MathUtils.clamp(car.position.x,-620,620);car.position.z=THREE.MathUtils.clamp(car.position.z,-620,620);
- checkpoints.forEach((c,i)=>{c.ring.rotation.z+=dt*.45;c.ring.material.emissiveIntensity=1.5+Math.sin(performance.now()*.004)*.5});
- const cp=checkpoints[cpIndex];if(cp&&car.position.distanceTo(cp.pos)<7){scene.remove(cp.ring);scene.remove(cp.light);cpIndex++;coins+=25;document.querySelector('#coins').textContent=coins;document.querySelector('#checks').textContent=Math.min(cpIndex,5)+' / 5';msg('+25 COINS · CHECKPOINT');if(cpIndex>=5){coins+=100;document.querySelector('#coins').textContent=coins;msg('MISSION COMPLETE · +100 COINS');resetCheckpoints()}}
- document.querySelector('#speed').textContent=Math.round(speed*(flying?1.7:1));document.querySelector('#mode').textContent=flying?'FLIGHT':'DRIVE';document.querySelector('#boost').textContent=Math.round(boost);
- const target=new THREE.Vector3();if(cockpit){target.copy(car.position).add(new THREE.Vector3(0,1.7,0));camera.position.lerp(target,.22);const look=car.position.clone().add(forward.clone().multiplyScalar(20)).add(new THREE.Vector3(0,1,0));camera.lookAt(look)}else{const offset=new THREE.Vector3(0,5.8,12).applyAxisAngle(new THREE.Vector3(0,1,0),car.rotation.y);target.copy(car.position).add(offset);camera.position.lerp(target,.09);camera.lookAt(car.position.clone().add(new THREE.Vector3(0,1,0)))}
- renderer.render(scene,camera)
+let speed=0,boost=100,coins=0,upgradeLevel=0,flying=false,cockpit=false,started=false;
+const keys=Object.create(null);
+const missions=[
+ {title:'MISSION 01 / SKYWAY',text:'Drive or fly through all 5 cyan checkpoint rings.',route:i=>new THREE.Vector3((i%2?16:-16),14+i*5,-55-i*55)},
+ {title:'MISSION 02 / OCEAN RUN',text:'Follow the glowing route above the ocean side.',route:i=>new THREE.Vector3(70+i*30,24+i*5,-90-i*42)},
+ {title:'MISSION 03 / MOUNTAIN PASS',text:'Climb through the mountain checkpoint route.',route:i=>new THREE.Vector3(-70-i*22,28+i*5,90-i*58)}
+];
+let missionIndex=0,checkpointIndex=0,checkpoints=[],missionComplete=false;
+function toast(text){const el=$('message');el.textContent=text;el.style.opacity='1';clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.style.opacity='0',1900)}
+function createCheckpoint(pos,index){
+ const group=new THREE.Group();
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(5,.25,8,32),new THREE.MeshStandardMaterial({color:index===0?0xffcf69:0x65f7ff,emissive:index===0?0xaa6500:0x0088bb,emissiveIntensity:1.8}));
+ group.add(ring);group.position.copy(pos);scene.add(group);
+ const light=new THREE.PointLight(0x31eaff,7,30);light.position.copy(pos);scene.add(light);
+ return {group,ring,light,pos:pos.clone(),index};
 }
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))});
-msg('WELCOME TO NEONSKY · PRESS F TO FLY');animate();
+function clearRoute(){for(const cp of checkpoints){scene.remove(cp.group);scene.remove(cp.light)}checkpoints=[]}
+function setupMission(){
+ clearRoute();checkpointIndex=0;missionComplete=false;
+ const m=missions[missionIndex%missions.length];
+ for(let i=0;i<5;i++)checkpoints.push(createCheckpoint(m.route(i),i));
+ $('missionTitle').textContent=m.title;$('missionText').textContent=m.text;
+ $('checks').textContent='0 / 5';$('missionStatus').textContent='Mission in progress';
+ $('nextMission').disabled=true;$('nextMission').textContent='NEXT MISSION 🔒';
+}
+setupMission();
+function toggleFlight(){flying=!flying;if(flying)car.position.y=Math.max(car.position.y,4);toast(flying?'FLIGHT MODE ON':'DRIVE MODE ON')}
+function cameraToggle(){cockpit=!cockpit;toast(cockpit?'COCKPIT CAMERA':'CHASE CAMERA')}
+function useBoost(){keys.boost=true;setTimeout(()=>keys.boost=false,900)}
+function upgrade(){if(coins>=100){coins-=100;upgradeLevel++;$('coins').textContent=coins;toast('UPGRADE INSTALLED · LEVEL '+upgradeLevel)}else toast('NEED 100 COINS FOR UPGRADE')}
+$('toggle').onclick=toggleFlight;$('mobileFly').onclick=toggleFlight;
+$('camera').onclick=cameraToggle;$('mobileCamera').onclick=cameraToggle;
+$('boostBtn').onclick=useBoost;$('mobileBoost').onclick=useBoost;
+$('upgrade').onclick=upgrade;$('mobileUpgrade').onclick=upgrade;
+$('nextMission').onclick=()=>{if(!missionComplete)return;missionIndex++;setupMission();toast('NEW MISSION STARTED')};
+$('startBtn').onclick=()=>{$('start').style.display='none';started=true;toast('GO! REACH THE FIRST CHECKPOINT')};
+function setKey(key,on){keys[key]=on}
+addEventListener('keydown',e=>{
+ const k=e.key.toLowerCase();
+ if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
+ if(k==='f'){if(!e.repeat)toggleFlight();return}
+ if(k==='c'){if(!e.repeat)cameraToggle();return}
+ if(k==='shift'){keys.boost=true;return}
+ keys[k===' '?'space':k==='control'?'down':k]=true;
+});
+addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='shift')keys.boost=false;else keys[k===' '?'space':k==='control'?'down':k]=false});
+document.querySelectorAll('[data-key]').forEach(btn=>{
+ const k=btn.dataset.key;const down=e=>{e.preventDefault();btn.classList.add('active');keys[k]=true;try{btn.setPointerCapture(e.pointerId)}catch{}};
+ const up=e=>{e.preventDefault();btn.classList.remove('active');keys[k]=false};
+ btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('lostpointercapture',up);
+});
+let last=performance.now();
+function animate(now){
+ requestAnimationFrame(animate);
+ const dt=Math.min((now-last)/1000,.04);last=now;
+ if(!started){renderer.render(scene,camera);return}
+ // Buttons work as held controls; brake reduces speed, reverse is intentionally limited for predictable mobile play.
+ const maxSpeed=95+upgradeLevel*18;
+ if(keys.w||keys.arrowup)speed+=35*dt;
+ if(keys.s||keys.arrowdown)speed-=55*dt;
+ speed=Math.max(0,Math.min(maxSpeed,speed));
+ const boosting=keys.boost&&boost>0;
+ if(boosting){speed=Math.min(maxSpeed+55,speed+55*dt);boost=Math.max(0,boost-30*dt)}else boost=Math.min(100,boost+11*dt);
+ if(!(keys.w||keys.arrowup||keys.s||keys.arrowdown))speed=Math.max(0,speed-5*dt);
+ const turn=(keys.a||keys.arrowleft?1:0)-(keys.d||keys.arrowright?1:0);
+ const moveFactor=.45+speed*.012;
+ car.rotation.y+=turn*dt*(.8+speed*.008);
+ const forward=new THREE.Vector3(Math.sin(car.rotation.y),0,-Math.cos(car.rotation.y));
+ car.position.addScaledVector(forward,speed*dt*.27);
+ if(flying){
+   if(keys.space||keys[' '])car.position.y+=19*dt;
+   if(keys.down)car.position.y-=19*dt;
+   car.position.y=THREE.MathUtils.clamp(car.position.y,2,130);
+   car.rotation.z=THREE.MathUtils.lerp(car.rotation.z,-turn*.12,.09);
+ }else{
+   car.position.y=THREE.MathUtils.lerp(car.position.y,0,.15);
+   car.rotation.z=THREE.MathUtils.lerp(car.rotation.z,0,.1);
+ }
+ car.position.x=THREE.MathUtils.clamp(car.position.x,-600,600);
+ car.position.z=THREE.MathUtils.clamp(car.position.z,-600,600);
+ // Only the current checkpoint can count. Missions cannot be skipped until all five are reached.
+ const current=checkpoints[checkpointIndex];
+ if(current){
+   current.ring.rotation.z+=dt*.4;
+   current.ring.material.emissiveIntensity=1.4+Math.sin(now*.004)*.4;
+   if(car.position.distanceTo(current.pos)<7.2){
+     scene.remove(current.group);scene.remove(current.light);
+     checkpointIndex++;coins+=25;$('coins').textContent=coins;$('checks').textContent=checkpointIndex+' / 5';
+     toast('+25 COINS · CHECKPOINT '+checkpointIndex);
+     if(checkpointIndex>=5){
+       missionComplete=true;coins+=100;$('coins').textContent=coins;
+       $('missionStatus').textContent='MISSION COMPLETE · +100 BONUS COINS';
+       $('nextMission').disabled=false;$('nextMission').textContent='NEXT MISSION →';
+       toast('MISSION COMPLETE! +100 BONUS COINS');
+     }
+   }
+ }
+ $('speed').textContent=Math.round(speed*(flying?1.6:1));$('mode').textContent=flying?'FLIGHT':'DRIVE';$('boost').textContent=Math.round(boost);
+ let target,look;
+ if(cockpit){target=car.localToWorld(new THREE.Vector3(0,2.0,-.2));look=car.position.clone().add(forward.clone().multiplyScalar(22)).add(new THREE.Vector3(0,1,0));camera.position.lerp(target,.28);camera.lookAt(look)}
+ else{target=car.position.clone().add(new THREE.Vector3(0,5.5,12).applyAxisAngle(new THREE.Vector3(0,1,0),car.rotation.y));camera.position.lerp(target,.11);camera.lookAt(car.position.clone().add(new THREE.Vector3(0,1,0)))}
+ renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5))});
 </script>
 </body>
 </html>

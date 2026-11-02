@@ -1,32 +1,26 @@
-NEONSKY — FUTURISTIC FLYING CAR WEB GAME (PROTOTYPE)
+NEONSKY — FINAL MOBILE + PC PROTOTYPE
+======================================
 
-WHAT'S INCLUDED
-- A browser-playable 3D prototype
-- Original angular futuristic car design (not an official Tesla model)
-- Stylized city, mountains, ocean, roads, glowing buildings and checkpoints
-- Drive/flight modes, chase and cockpit cameras, turbo boost
-- Checkpoint missions, rewards/coins and a simple upgrade button
-- Responsive touch controls for phones and keyboard controls for PC
+Files
+- index.html: the playable 3D browser game
+- README.txt: this guide
 
-HOW TO RUN
-1. Extract the ZIP.
-2. Open index.html in a modern browser while connected to the internet.
-3. Three.js is loaded from a CDN, so an internet connection is required.
-4. If your browser blocks module loading from a local file, run a local web server:
-   - Install Python 3 if needed.
-   - Open a terminal in this folder and run: python -m http.server 8000
-   - Open http://localhost:8000
+HOW TO PLAY ONLINE
+1. Upload index.html and README.txt to the ROOT of your GitHub repository (not inside a folder).
+2. In Settings > Pages, choose "Deploy from a branch", branch "main", folder "/ (root)", then Save.
+3. Wait for GitHub Pages to publish, then open the URL shown on the Pages settings screen.
+4. If the page was already published, upload the new index.html and commit the changes. Refresh the game page after the new deployment finishes.
 
-CONTROLS
-W/S = accelerate/brake
-A/D = steer
-Space = rise while flying
-Ctrl = descend while flying
-F = toggle flight/landing
-C = switch chase/cockpit camera
-Shift = turbo boost
+IMPORTANT
+- The 3D engine is loaded from jsDelivr, so an internet connection is required.
+- The game is designed for mobile touch controls and PC keyboard.
+- Mobile: hold ACCELERATE/BRAKE/LEFT/RIGHT. RISE/DESCEND only work in flight mode.
+- PC: W accelerate, S brake, A/D steer, F toggle flight/drive, Space rise, Ctrl descend, C camera, Shift boost.
+- Reach all five checkpoints to finish a mission. "Next Mission" stays locked until completion.
+- Upgrades cost 100 coins. Each checkpoint gives 25 coins; finishing a mission gives a 100-coin bonus.
 
-NOTES
-This is a playable starter prototype, not a finished commercial-scale open-world game.
-Graphics and performance vary by device; use a recent browser and lower battery-saving modes
-if the phone is struggling. The prototype uses simple procedural geometry and no external car assets.
+TROUBLESHOOTING
+- If the screen is blank, check that the file is named exactly index.html (lowercase) and sits in the repository root.
+- Make sure Settings > Pages points to main and /(root).
+- After committing an update, allow the Pages deployment to finish and refresh the published page.
+- This is an improved playable prototype, not a finished commercial game. Geometry and city scenery are stylized to keep it relatively light on phones.
